@@ -1,0 +1,22 @@
+# Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+onnxruntime>=1.15.0
+onnxruntime-gpu>=1.15.0  # Optional, untuk GPU
+
+# Face Detection & Recognition
+insightface>=0.7.3
+opencv-python>=4.8.0
+
+# Database
+pymongo>=4.5.0
+
+# Utilities
+numpy>=1.24.0
+Pillow>=10.0.0
+tqdm>=4.66.0
+python-dotenv>=1.0.0
+
+# FASTAPI
+fastapi
+uvicorn

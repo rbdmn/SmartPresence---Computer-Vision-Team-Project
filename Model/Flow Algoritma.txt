@@ -1,0 +1,43 @@
+Mode FUll
+FaceRecognitionSystem -> kelas face_recognition_system.py
+1. Register Wajah -> register_faces_from_folder
+2. register_faces_from_folder = 
+- Ambil muka muka dari DATABASE_IMAGES_DIR (database_images)
+- ambil path nya
+- ambil gambar-gambar dari folder, dengan syarat extensi nya harus sesuai SUPPORTED_EXTENSIONS (masih dalam bentuk PATH, belum imread)
+- clear_existing, menghapus data-data di database secara keseluruhan (misal mau nambah wajah, mengurangi wajah). Default YES
+- looping proses image, dengan:
+	- mengambil nama orang tersebut dengan fungsi extract_name_from_filename (Yoga_1.jpg -> Yoga)
+	- Baca gambar, tadi masih path doang dengan cv2.imread
+	- Deteksi muka dari arg cv2 (np.ndarray), (face_detector) -> detect_single_face()
+	- detect_single_face() -> detect_faces().
+		-detect_faces() menggunakan FaceAnalysis, model nya buffalo_1.
+			- jadi tinggal panggil dengan: self.app.get(image)
+			- return dari face_detector untuk mendapatkan faces. 
+			- Cek jika lebih dari 1, maka ambil yang paling dominan dari gambar (terbesar)
+		- return face terbesar (largest_face)
+	- dapatkan embedding si face tadi get_embedding() (oleh face_encoder.py)
+		- tinggal panggil face.embedding (face sudah dalam bentuk cv2? atau ada perubahan bentuk dari si retinaFace saat deteksi?)
+		- normalisasi si embedding itu
+	- save ke database si embeding itu, berdasarkan person_name tadi dari pas extract_name_from_filename()
+
+3. Dapatkan statistik dari DB get_database_stats()
+	- di dalamnya mengambil persons dengan memanggil database.get_unique_persons(). intinya mengambil nama-nama secara unik (tidak dobel) dan listkan
+
+4. lakukan testing, dengan mengambil folder test_folder.
+	- panggil test_accuracy() dipengaruhi oleh threshold recognition
+		- ambil direktori test_Database, ambil path gambar di dalam nya.
+		- looping seluruh gambar
+			- ambil nama orang nya dari si nama file
+			- recognize_from_file, orang dari file. Jadi dia konversi dari path ke cv2 imread. masukkin recognize_face()
+				- deteksi wajah dari gambar. ada kemungkinan lebih dari satu wajah di gambar, jadi looping.
+				- dapatkan embedding.
+				- dapatkan find_closest_match()
+					- menggunakn compute_cosine_similarity(), dapatkan skor nya.
+				- return result, nama distance, and stuff.
+			- return hasil si recognize_face
+		- hasil ambil nama, distance. 
+		- lihat prediksi nama dengan nama pada file sama atau tidak.
+		- kalkulasi hasil
+
+5. Done.
