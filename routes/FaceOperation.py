@@ -19,6 +19,17 @@ async def upload_face_image(payload: FaceUploadRequest):
         return {"status": "success", "results": predicted_user_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@router.post("/face/uploadmany")
+async def upload_face_image_many(payload: FaceUploadRequest):
+    try:
+        print("Received base64 image for multiple recognition")
+        # pakai base64 string
+        results = system.recognize_from_base64_many(payload.image_base64)
+        
+        return {"status": "success", "results": results}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/RegisterFaceFromFolder")
 async def register_face_from_folder():

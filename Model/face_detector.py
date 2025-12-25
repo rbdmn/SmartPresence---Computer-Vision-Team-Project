@@ -1,6 +1,7 @@
 """
 Face Detection menggunakan RetinaFace dari InsightFace library
 """
+from typing import List, Tuple
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
@@ -70,6 +71,36 @@ class FaceDetector:
         # Jika ada beberapa wajah, ambil yang paling besar (berdasarkan area bbox)
         largest_face = max(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]))
         return largest_face
+    
+    def detect_faces_with_boxes(self, image: np.ndarray) -> Tuple[List[np.ndarray], List[Tuple[int, int, int, int]]]:
+        """
+        Deteksi semua wajah dalam gambar dan kembalikan dengan bounding boxes
+        
+        Args:
+            image: Gambar dalam format BGR
+            
+        Returns:
+            Tuple (List of cropped faces, List of bounding boxes (x, y, w, h))
+        """
+        face_objects = []
+        bboxes = []
+        
+        # Deteksi wajah menggunakan InsightFace
+        detections = self.detect_faces(image)
+        
+        for face in detections:
+            # InsightFace bbox format: [x1, y1, x2, y2]
+            bbox = face.bbox.astype(int)
+            x1, y1, x2, y2 = bbox
+            
+            # Convert ke format (x, y, width, height)
+            w = x2 - x1
+            h = y2 - y1
+            
+            face_objects.append(face)
+            bboxes.append((x1, y1, w, h))
+        
+        return face_objects, bboxes
     
     def get_face_image(self, image: np.ndarray, face, margin: float = 0.2) -> np.ndarray:
         """

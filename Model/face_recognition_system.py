@@ -1,13 +1,13 @@
 """
 Sistem Face Recognition utama yang mengintegrasikan semua komponen
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 import cv2
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 from tqdm import tqdm
-from config.configrations import attendance_collection, users_collection, vector_collection
+from config.configrations import attendance_collection, users_collection, vector_collection, visitor_vector_collection, visitor_collection
 import base64
 from bson import ObjectId
 import time
@@ -40,8 +40,11 @@ class FaceRecognitionSystem:
         self.encoder = FaceEncoder()
         self.database = FaceDatabase()
         
+        self.promote_time_hours = 1  # Waktu minimal untuk promosi visitor ke user
+        self.promote_min_appearances = 5  # Jumlah kemunculan minimal untuk promosi visitor ke user
+        
         print("="*50)
-        print("Sistem siap digunakan!")
+        print("Sistem siap digunakan!") 
         print("="*50)
     
     def extract_name_from_filename(self, filename: str) -> str:
@@ -211,6 +214,143 @@ class FaceRecognitionSystem:
         user_id, distance = self.database.find_closest_match(embedding, threshold)
         
         return user_id
+    
+    def recognize_faces(self, image: np.ndarray, threshold: float = None) -> List[Dict]:
+        """
+        Kenali banyak wajah dalam gambar
+        
+        Args:
+            image: Gambar dalam format BGR
+            threshold: Threshold untuk recognition (default dari config)
+            
+        Returns:
+            List of recognition results dengan user_id dan bounding box
+        """
+        if threshold is None:
+            threshold = RECOGNITION_THRESHOLD
+        
+        results = []
+        
+        # Detect all faces with bounding boxes
+        faces, bboxes = self.detector.detect_faces_with_boxes(image)
+        
+        if not faces:
+            print("Warning: Tidak ada wajah terdeteksi")
+            return results
+        
+        for i, face in enumerate(faces):
+            embedding = self.encoder.get_embedding(face)
+            
+            if embedding is None:
+                print(f"Warning: Gagal mengekstrak embedding dari wajah ke-{i+1}")
+                continue
+            
+            # Find closest match
+            print("Info: Mencari kecocokan untuk wajah ke-", i+1)
+            user_id, distance = self.database.find_closest_match(embedding, threshold)
+            
+            if user_id: # jika ditemukan di database users
+                self.database.maybe_add_embedding(user_id, embedding)
+                # Get bounding box
+                bbox = bboxes[i] if i < len(bboxes) else None
+                results.append({
+                    "user_id": user_id,
+                    "distance": distance,
+                    "bounding_box": {
+                        "x": int(bbox[0]) if bbox is not None else None,
+                        "y": int(bbox[1]) if bbox is not None else None,
+                        "width": int(bbox[2]) if bbox is not None else None,
+                        "height": int(bbox[3]) if bbox is not None else None
+                    } if bbox is not None else None
+                })
+            else: # jika tidak ditemukan di database users, cek di visitor
+                print("Info: Wajah tidak dikenali, memeriksa di database visitor...")
+                visitor_id, distance = self.database.find_visitor_closest_match(embedding)
+                if visitor_id:
+                    print("Info: Wajah dikenali sebagai visitor dengan ID:", visitor_id)
+                    bbox = bboxes[i] if i < len(bboxes) else None
+                    print("Info: Memperbarui data visitor...")
+                    self.handle_known_visitor(visitor_id, embedding)
+                    print("Info: Data visitor diperbarui.")
+                    results.append({
+                        "visitor_id": visitor_id,
+                        "distance": distance,
+                        "bounding_box": {
+                            "x": int(bbox[0]) if bbox is not None else None,
+                            "y": int(bbox[1]) if bbox is not None else None,
+                            "width": int(bbox[2]) if bbox is not None else None,
+                            "height": int(bbox[3]) if bbox is not None else None
+                        } if bbox is not None else None
+                    })
+                else: # jika di visitor juga tidak ditemukan, tambahkan sebagai visitor baru
+                    new_visitor_id = self.database.add_new_visitor(embedding)
+                    bbox = bboxes[i] if i < len(bboxes) else None
+                    results.append({
+                        "visitor_id": new_visitor_id,
+                        "distance": None,
+                        "bounding_box": {
+                            "x": int(bbox[0]) if bbox is not None else None,
+                            "y": int(bbox[1]) if bbox is not None else None,
+                            "width": int(bbox[2]) if bbox is not None else None,
+                            "height": int(bbox[3]) if bbox is not None else None
+                        } if bbox is not None else None
+                    })
+        return results
+    
+    def handle_known_visitor(self, visitor_id, embedding):
+        self.database.maybe_add_visitor_embedding(visitor_id, embedding) # Tambahkan embedding visitor jika perlu
+        print("Info: Memperbarui embedding selesai...", visitor_id)
+        print("info visitor_id:", visitor_id)
+        visitor_id_obj = ObjectId(visitor_id)
+        temp_person = visitor_collection.find_one({"_id": visitor_id_obj})
+        print("debug: Data visitor ditemukan:", temp_person["name"])
+        # Update tracking s
+        temp_person["last_seen"] = datetime.now().isoformat()
+        temp_person["appearance_count"] += 1
+        
+        print("debug: Memperbarui data visitor di database...")
+        visitor_collection.update_one(
+            {"_id": visitor_id_obj},
+            {"$set": {
+                "last_seen": temp_person["last_seen"],
+                "appearance_count": temp_person["appearance_count"]
+            }}
+        )
+        first_seen_str = temp_person["first_seen"]
+        first_seen_dt = datetime.fromisoformat(first_seen_str)
+
+        time_elapsed = datetime.now() - first_seen_dt
+        should_promote = (
+            time_elapsed >= timedelta(hours=self.promote_time_hours) and
+            temp_person["appearance_count"] >= self.promote_min_appearances
+        )
+        if should_promote:
+            # Promosi visitor ke user
+            visitor_count = users_collection.count_documents({"name": {"$regex": r"^Visitor\d+$"}})
+            new_visitor_name = f"Visitor{visitor_count + 1}"
+            new_user = {
+                "name": new_visitor_name,
+                "created_at": datetime.now().isoformat()
+            }
+            user_result = users_collection.insert_one(new_user)
+            user_id = user_result.inserted_id
+            user_id = ObjectId(user_id)
+            
+            # Pindahkan semua embedding visitor ke vector_collection dengan user_id baru
+            visitor_vectors = list(visitor_vector_collection.find({"visitor_id": visitor_id_obj}))
+            for vec in visitor_vectors:
+                new_vector = {
+                    "user_id": user_id,
+                    "embedding": vec["embedding"],
+                    "created_at": vec["created_at"]
+                }
+                vector_collection.insert_one(new_vector)
+            
+            # Hapus data visitor
+            visitor_vector_collection.delete_many({"visitor_id": visitor_id_obj})
+            visitor_collection.delete_one({"_id": visitor_id_obj})
+            
+            print(f"Info: Visitor {visitor_id} dipromosikan ke user dengan ID {user_id}.")
     
     def recognize_from_file(self, image_path: str, threshold: float = None) -> List[Dict]:
         """
@@ -589,7 +729,22 @@ class FaceRecognitionSystem:
         image = self.load_image_from_base64(image_base64)
         if image is None:
             return []
-        return self.recognize_face(image, threshold)
+        return self.recognize_faces(image, threshold)
+    def recognize_from_base64_many(self, image_base64: str, threshold: float = None) -> List[Dict]:
+        """
+        Kenali wajah dari Base64 string
+        
+        Args:
+            image_base64: String Base64 dari gambar
+            threshold: Threshold untuk recognition
+            
+        Returns:
+            List of recognition results
+        """
+        image = self.load_image_from_base64(image_base64)
+        if image is None:
+            return []
+        return self.recognize_faces(image, threshold)
     
     
     def close(self):
