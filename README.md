@@ -10,6 +10,6 @@ Lemme show ya!
 
 # HOW TO RUN:
 - env\Scripts\activate  
-- py main.py
+- uvicorn main:app --reload
 
 # See you on the flipside!
