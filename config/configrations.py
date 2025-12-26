@@ -13,7 +13,7 @@ try:
 except Exception as e:
     print(e)
 
-db = client["SmartPresenceDatabase"]
+db = client["ComputerVisionProject"]
 users_collection = db["Users"]
 attendance_collection = db["Attendance"]
 vector_collection = db["Vector"]

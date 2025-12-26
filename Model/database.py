@@ -370,7 +370,7 @@ class FaceDatabase:
             document = {
                 "visitor_id": ObjectId(visitor_id),
                 "embedding": embedding.tolist() if isinstance(embedding, np.ndarray) else embedding,
-                "created_at": datetime.now()
+                "created_at": datetime.now().isoformat()
             }
             visitor_vector_collection.insert_one(document)
             return True
@@ -383,7 +383,7 @@ class FaceDatabase:
                 document = {
                     "visitor_id": ObjectId(visitor_id),
                     "embedding": embedding.tolist() if isinstance(embedding, np.ndarray) else embedding,
-                    "created_at": datetime.now()
+                    "created_at": datetime.now().isoformat()
                 }
                 #sda
                 self._memory_storage.append(document)
