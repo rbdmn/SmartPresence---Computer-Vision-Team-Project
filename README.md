@@ -11,5 +11,6 @@ Lemme show ya!
 # HOW TO RUN:
 - env\Scripts\activate  
 - uvicorn main:app --reload
+- 127.0.0.1:8000/docs (buat buka Swagger, UI nya FastAPI)
 
 # See you on the flipside!
