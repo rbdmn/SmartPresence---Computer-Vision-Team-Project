@@ -7,8 +7,8 @@ from bson import ObjectId
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from typing import List, Dict, Optional, Tuple
-from datetime import datetime
-from .config import MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME
+from datetime import datetime, timedelta
+from .config import MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME, ATTENDANCE_TIMELAPSE
 from config.configrations import attendance_collection, users_collection, vector_collection, visitor_vector_collection, visitor_collection
 
 
@@ -423,6 +423,98 @@ class FaceDatabase:
         self.add_visitor_embedding(visitor_id, embedding)
         
         return visitor_id
+
+    def add_user_attendance(self, user_id, class_id):
+        """
+        Tambah catatan kehadiran untuk user jika belum absen dalam 45 menit terakhir di kelas yang sama
+
+        Args:
+            user_id: ID user
+            class_id: ID kelas
+        """
+        now = datetime.now()
+        time_limit = now - timedelta(minutes=ATTENDANCE_TIMELAPSE)
+
+        # Query kehadiran terakhir user di kelas yang sama
+        query = {
+            "user_id": ObjectId(user_id),
+            "class_id": ObjectId(class_id)
+        }
+        last_attendance = None
+        if attendance_collection is not None:
+            last_attendance = attendance_collection.find_one(
+                query,
+                sort=[("timestamp", -1)]
+            )
+        else:
+            # Fallback ke memory storage
+            filtered = [d for d in self._memory_storage if d.get("user_id") == ObjectId(user_id) and d.get("class_id") == ObjectId(class_id)]
+            if filtered:
+                last_attendance = max(filtered, key=lambda d: d["timestamp"])
+
+        # Cek apakah sudah lewat 45 menit
+        if last_attendance:
+            last_time = datetime.fromisoformat(last_attendance["timestamp"])
+            if last_time > time_limit:
+                return False  # Tidak boleh absen lagi
+
+        attendance_doc = {
+            "user_id": ObjectId(user_id),
+            "timestamp": now.isoformat(),
+            "class_id": ObjectId(class_id)
+        }
+
+        if attendance_collection is not None:
+            attendance_collection.insert_one(attendance_doc)
+        else:
+            self._memory_storage.append(attendance_doc)
+        return True
+            
+    def add_visitor_attendance(self, visitor_id, class_id):
+        """
+        Tambah catatan kehadiran untuk visitor
+        
+        Args:
+            visitor_id: ID visitor
+            class_id: ID kelas
+        """
+        now = datetime.now()
+        time_limit = now - timedelta(minutes=ATTENDANCE_TIMELAPSE) 
+
+        # Query kehadiran terakhir user di kelas yang sama
+        query = {
+            "visitor_id": ObjectId(visitor_id),
+            "class_id": ObjectId(class_id)
+        }
+        last_attendance = None
+        if attendance_collection is not None:
+            last_attendance = attendance_collection.find_one(
+                query,
+                sort=[("timestamp", -1)]
+            )
+        else:
+            # Fallback ke memory storage
+            filtered = [d for d in self._memory_storage if d.get("visitor_id") == ObjectId(visitor_id) and d.get("class_id") == ObjectId(class_id)]
+            if filtered:
+                last_attendance = max(filtered, key=lambda d: d["timestamp"])
+
+        # Cek apakah sudah lewat 45 menit
+        if last_attendance:
+            last_time = datetime.fromisoformat(last_attendance["timestamp"])
+            if last_time > time_limit:
+                return False  # Tidak boleh absen lagi
+
+        attendance_doc = {
+            "visitor_id": ObjectId(visitor_id),
+            "timestamp": now.isoformat(),
+            "class_id": ObjectId(class_id)
+        }
+
+        if attendance_collection is not None:
+            attendance_collection.insert_one(attendance_doc)
+        else:
+            self._memory_storage.append(attendance_doc)
+        return True
 
     
     def close(self):

@@ -8,6 +8,7 @@ router = APIRouter()
 system = FaceRecognitionSystem()
 
 class FaceUploadRequest(BaseModel):
+    class_id: str
     image_base64: str
 
 @router.post("/face/upload")
@@ -25,7 +26,7 @@ async def upload_face_image_many(payload: FaceUploadRequest):
     try:
         print("Received base64 image for multiple recognition")
         # pakai base64 string
-        results = system.recognize_from_base64_many(payload.image_base64)
+        results = system.recognize_from_base64_many(payload.image_base64, payload.class_id)
         
         return {"status": "success", "results": results}
     except Exception as e:

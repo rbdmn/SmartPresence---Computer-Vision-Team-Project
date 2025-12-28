@@ -33,3 +33,7 @@ TARGET_FACE_SIZE = (112, 112)  # Ukuran input untuk ArcFace
 
 # Supported image extensions
 SUPPORTED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
+
+# Logging Configurations
+ATTENDANCE_TIMELAPSE = 45 # absen per 45 menit
+MIN_APPEARANCE_FOR_PROMOTION = 6 # minimal 6 kemunculan untuk absen (6 sks)

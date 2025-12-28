@@ -16,7 +16,8 @@ from .config import (
     DATABASE_IMAGES_DIR,
     TESTING_IMAGES_DIR,
     RECOGNITION_THRESHOLD,
-    SUPPORTED_EXTENSIONS
+    SUPPORTED_EXTENSIONS,
+    MIN_APPEARANCE_FOR_PROMOTION
 )
 from .face_detector import FaceDetector
 from .face_encoder import FaceEncoder
@@ -39,10 +40,7 @@ class FaceRecognitionSystem:
         self.detector = FaceDetector()
         self.encoder = FaceEncoder()
         self.database = FaceDatabase()
-        
-        self.promote_time_hours = 1  # Waktu minimal untuk promosi visitor ke user
-        self.promote_min_appearances = 5  # Jumlah kemunculan minimal untuk promosi visitor ke user
-        
+                
         print("="*50)
         print("Sistem siap digunakan!") 
         print("="*50)
@@ -215,7 +213,7 @@ class FaceRecognitionSystem:
         
         return user_id
     
-    def recognize_faces(self, image: np.ndarray, threshold: float = None) -> List[Dict]:
+    def recognize_faces(self, image: np.ndarray, class_id: str, threshold: float = None) -> List[Dict]:
         """
         Kenali banyak wajah dalam gambar
         
@@ -263,10 +261,12 @@ class FaceRecognitionSystem:
                         "height": int(bbox[3]) if bbox is not None else None
                     } if bbox is not None else None
                 })
+                self.database.add_user_attendance(user_id, class_id)
             else: # jika tidak ditemukan di database users, cek di visitor
                 print("Info: Wajah tidak dikenali, memeriksa di database visitor...")
                 visitor_id, distance = self.database.find_visitor_closest_match(embedding)
                 if visitor_id:
+                    self.database.add_visitor_attendance(visitor_id, class_id)
                     print("Info: Wajah dikenali sebagai visitor dengan ID:", visitor_id)
                     bbox = bboxes[i] if i < len(bboxes) else None
                     print("Info: Memperbarui data visitor...")
@@ -282,11 +282,13 @@ class FaceRecognitionSystem:
                             "height": int(bbox[3]) if bbox is not None else None
                         } if bbox is not None else None
                     })
+                    
                 else: # jika di visitor juga tidak ditemukan, tambahkan sebagai visitor baru
-                    new_visitor_id = self.database.add_new_visitor(embedding)
+                    visitor_id = self.database.add_new_visitor(embedding)
+                    self.database.add_visitor_attendance(visitor_id, class_id)
                     bbox = bboxes[i] if i < len(bboxes) else None
                     results.append({
-                        "visitor_id": new_visitor_id,
+                        "visitor_id": visitor_id,
                         "distance": None,
                         "bounding_box": {
                             "x": int(bbox[0]) if bbox is not None else None,
@@ -295,6 +297,7 @@ class FaceRecognitionSystem:
                             "height": int(bbox[3]) if bbox is not None else None
                         } if bbox is not None else None
                     })
+                
         return results
     
     def handle_known_visitor(self, visitor_id, embedding):
@@ -316,13 +319,9 @@ class FaceRecognitionSystem:
                 "appearance_count": temp_person["appearance_count"]
             }}
         )
-        first_seen_str = temp_person["first_seen"]
-        first_seen_dt = datetime.fromisoformat(first_seen_str)
 
-        time_elapsed = datetime.now() - first_seen_dt
         should_promote = (
-            time_elapsed >= timedelta(hours=self.promote_time_hours) and
-            temp_person["appearance_count"] >= self.promote_min_appearances
+            temp_person["appearance_count"] >= MIN_APPEARANCE_FOR_PROMOTION
         )
         if should_promote:
             # Promosi visitor ke user
@@ -345,6 +344,16 @@ class FaceRecognitionSystem:
                     "created_at": vec["created_at"]
                 }
                 vector_collection.insert_one(new_vector)
+            
+            attendance_records = list(attendance_collection.find({"visitor_id": visitor_id_obj}))
+            for record in attendance_records:
+                attendance_collection.update_one(
+                    {"_id": record["_id"]},
+                    {
+                        "$set": {"user_id": user_id},
+                        "$unset": {"visitor_id": ""}
+                    }
+                )
             
             # Hapus data visitor
             visitor_vector_collection.delete_many({"visitor_id": visitor_id_obj})
@@ -721,6 +730,7 @@ class FaceRecognitionSystem:
         
         Args:
             image_base64: String Base64 dari gambar
+            class_id: ID kelas untuk absensi
             threshold: Threshold untuk recognition
             
         Returns:
@@ -730,7 +740,7 @@ class FaceRecognitionSystem:
         if image is None:
             return []
         return self.recognize_faces(image, threshold)
-    def recognize_from_base64_many(self, image_base64: str, threshold: float = None) -> List[Dict]:
+    def recognize_from_base64_many(self, image_base64: str, class_id: str, threshold: float = None) -> List[Dict]:
         """
         Kenali wajah dari Base64 string
         
@@ -744,7 +754,7 @@ class FaceRecognitionSystem:
         image = self.load_image_from_base64(image_base64)
         if image is None:
             return []
-        return self.recognize_faces(image, threshold)
+        return self.recognize_faces(image, class_id, threshold)
     
     
     def close(self):
