@@ -52,26 +52,18 @@ async def login(login_req: LoginRequest):
             detail="Invalid akun_upi or password"
         )
 
-    # Cek apakah password sudah di-hash bcrypt
-    if hashed_password.startswith("$2b$"):
-        try:
-            if not verify_password(login_req.password, hashed_password):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid akun_upi or password"
-                )
-        except Exception:
+    # Verifikasi password (bcrypt atau plaintext, passlib handle otomatis)
+    try:
+        if not verify_password(login_req.password, hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid akun_upi or password"
             )
-    else:
-        # Fallback: plaintext check (hanya untuk development/migrasi)
-        if login_req.password != hashed_password:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid akun_upi or password"
-            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid akun_upi or password"
+        )
 
     access_token = create_access_token(
         data={"account_id": str(account["_id"]), "jabatan": account["jabatan"]}
