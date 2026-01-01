@@ -9,3 +9,27 @@
 /routes/__pycache__/
 /Model/models
 /Model/__pycache__/
+OPENSET_EVALUATION_GUIDE.md
+OPENSET_GROUNDTRUTH_GUIDE.md
+prepare_groundtruth.py
+QUICKSTART_GROUNDTRUTH.md
+test_openset_groundtruth.py
+test_openset.py
+
+Model/hasil_percobaan1.txt
+Model/hasil_percobaan2.jpg
+Model/hasil_percobaan2.txt
+Model/hasil.jpg
+Model/Mean jika ketemu di user.docx
+Model/penemuan_test.txt
+Model/Percobaan Kedua.jpg
+Model/percobaan1.jpg
+Model/simple_test.py
+Model/test_gpu.py
+
+Model/P2L_S3_C3
+Model/P2L_S3_C3.1
+Model/P2L_S3_C3.2
+Model/P2L_S5_C2.1
+
+ComputerVisionProject
