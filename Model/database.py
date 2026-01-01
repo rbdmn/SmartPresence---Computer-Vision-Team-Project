@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
-from .config import MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME, ATTENDANCE_TIMELAPSE
+from .config import ATTENDANCE_TIMELAPSE
 from config.configrations import attendance_collection, users_collection, vector_collection, visitor_vector_collection, visitor_collection
 
 
@@ -21,25 +21,7 @@ class FaceDatabase:
         """
         Inisialisasi koneksi MongoDB
         """
-        try:
-            self.client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-            # Test connection
-            self.client.admin.command('ping')
-            print(f"Terhubung ke MongoDB: {MONGO_URI}")
-            
-            self.db = self.client[MONGO_DB_NAME]
-            self.collection = self.db[MONGO_COLLECTION_NAME]
-            
-            # Create index untuk pencarian cepat
-            self.collection.create_index("person_name")
-            
-        except ConnectionFailure as e:
-            print(f"Gagal terhubung ke MongoDB: {e}")
-            print("Menggunakan mode in-memory sebagai fallback...")
-            self.client = None
-            self.db = None
-            self.collection = None
-            self._memory_storage: List[Dict] = []
+        print("Menghubungkan ke MongoDB...")
     
     def get_all_embeddings(self) -> List[Dict]:
         """
@@ -277,35 +259,74 @@ class FaceDatabase:
             return None, max_similarity
         
         
-    def find_visitor_closest_match(self, query_embedding: np.ndarray, all_embeddings, threshold: float = 0.5) -> Tuple[Optional[str], float]:
+    def find_visitor_closest_match(
+        self, 
+        query_embedding: np.ndarray, 
+        all_embeddings,
+        threshold: float = 0.5,
+        visitor_cutoff: float = 0.2,  # Skip visitor jika < ini
+        early_stop: float = 0.8        # Stop jika dapat >= ini
+    ) -> Tuple[Optional[str], float]:
         """
-        Cari embedding terdekat menggunakan Euclidean distance
+        Optimized visitor matching dengan visitor-level cutoff dan early stopping
         
         Args:
             query_embedding: Embedding yang akan dicari
-            threshold: Maximum distance untuk dianggap match
+            all_embeddings: List semua visitor embeddings dari cache
+            threshold: Minimum similarity untuk dianggap match (default 0.5)
+            visitor_cutoff: Skip visitor jika embedding pertama < ini (default 0.2)
+            early_stop: Stop search jika dapat similarity >= ini (default 0.8)
             
         Returns:
-            Tuple (person_name, distance) atau (None, float('inf')) jika tidak ada match
+            Tuple (visitor_id, similarity) atau (None, max_similarity)
         """
         print(f"Debug: Mencari di database visitor, total embeddings: {len(all_embeddings)}")
+        
         if not all_embeddings:
             return None, 0.0
         
-        max_similarity = -1.0  # ← Mulai dari -1 (untuk cari MAXIMUM)
+        # Group embeddings by visitor_id
+        visitor_embeddings = {}
+        for doc in all_embeddings:
+            visitor_id = doc["visitor_id"]
+            if visitor_id not in visitor_embeddings:
+                visitor_embeddings[visitor_id] = []
+            visitor_embeddings[visitor_id].append(doc["embedding"])
+        
+        print(f"Debug: Total unique visitors in database: {len(visitor_embeddings)}")
+        
+        max_similarity = -1.0
         best_match = None
         
-        for doc in all_embeddings:
-            similarity = FaceEncoder.compute_cosine_similarity(
+        for visitor_id, embeddings in visitor_embeddings.items():
+            # STRATEGI 1: Cek embedding pertama sebagai filter
+            first_similarity = FaceEncoder.compute_cosine_similarity(
                 query_embedding, 
-                doc["embedding"]
+                embeddings[0]
             )
             
-            if similarity > max_similarity: 
-                max_similarity = similarity
-                best_match = doc["visitor_id"]
+            # Visitor-level cutoff: Skip visitor ini jika embedding pertama jelek
+            if first_similarity < visitor_cutoff:
+                continue
+            
+            # Jika embedding pertama bagus, cek semua embedding visitor ini
+            for embedding in embeddings:
+                similarity = FaceEncoder.compute_cosine_similarity(
+                    query_embedding, 
+                    embedding
+                )
+                
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    best_match = visitor_id
+                
+                # STRATEGI 2: Early stopping jika dapat match sangat kuat
+                if similarity >= early_stop:
+                    print(f"Debug: Early stop! Visitor {best_match} dengan similarity {max_similarity}")
+                    return best_match, max_similarity
         
         print(f"Debug: Closest visitor match: {best_match} dengan similarity {max_similarity}")
+        
         if max_similarity >= threshold:
             return best_match, max_similarity
         else:

@@ -5,7 +5,7 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
-from .config import DETECTION_THRESHOLD, MODELS_DIR
+from .config import DETECTION_THRESHOLD, MODELS_DIR, TARGET_FACE_SIZE
 
 
 class FaceDetector:
@@ -26,23 +26,11 @@ class FaceDetector:
             providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
         )
         
-        # if use_gpu:
-        #     providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
-        # else:
-        #     providers = ['CPUExecutionProvider']
-        
-        # # Initialize FaceAnalysis dengan GPU
-        # self.app = FaceAnalysis(
-        #     name='buffalo_l',  # atau model lain
-        #     providers=providers,
-        #     allowed_modules=['detection', 'recognition']
-        # )
-        
         # PENTING: Set context
         ctx_id = 0 if use_gpu else -1  # 0 = GPU, -1 = CPU
         # self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
         # Prepare dengan detection size
-        self.app.prepare(ctx_id=ctx_id, det_size=(224, 224), det_thresh=DETECTION_THRESHOLD)
+        self.app.prepare(ctx_id=ctx_id, det_size=TARGET_FACE_SIZE, det_thresh=DETECTION_THRESHOLD)
         
         print(f"Model running on: {'GPU' if use_gpu else 'CPU'}")
         print(f"Providers: {self.app.models['recognition'].session.get_providers()}")
@@ -125,65 +113,3 @@ class FaceDetector:
             bboxes.append((x1, y1, w, h))
         
         return face_objects, bboxes
-    
-    def get_face_image(self, image: np.ndarray, face, margin: float = 0.2) -> np.ndarray:
-        """
-        Crop gambar wajah dari gambar asli
-        
-        Args:
-            image: Gambar asli
-            face: Face object dari detector
-            margin: Margin tambahan di sekitar wajah
-            
-        Returns:
-            Cropped face image
-        """
-        bbox = face.bbox.astype(int)
-        x1, y1, x2, y2 = bbox
-        
-        # Tambahkan margin
-        w, h = x2 - x1, y2 - y1
-        margin_x, margin_y = int(w * margin), int(h * margin)
-        
-        x1 = max(0, x1 - margin_x)
-        y1 = max(0, y1 - margin_y)
-        x2 = min(image.shape[1], x2 + margin_x)
-        y2 = min(image.shape[0], y2 + margin_y)
-        
-        return image[y1:y2, x1:x2]
-    
-    def draw_detection(self, image: np.ndarray, face, name: str = None, distance: float = None) -> np.ndarray:
-        """
-        Gambar bounding box dan informasi pada gambar
-        
-        Args:
-            image: Gambar asli
-            face: Face object
-            name: Nama orang (jika sudah dikenali)
-            distance: Euclidean distance
-            
-        Returns:
-            Gambar dengan anotasi
-        """
-        img_copy = image.copy()
-        bbox = face.bbox.astype(int)
-        x1, y1, x2, y2 = bbox
-        
-        # Warna berdasarkan apakah dikenali atau tidak
-        color = (0, 255, 0) if name and name != "Unknown" else (0, 0, 255)
-        
-        # Gambar bounding box
-        cv2.rectangle(img_copy, (x1, y1), (x2, y2), color, 2)
-        
-        # Gambar label
-        if name:
-            label = f"{name}"
-            if distance is not None:
-                label += f" ({distance:.2f})"
-            
-            # Background untuk text
-            (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-            cv2.rectangle(img_copy, (x1, y1 - th - 10), (x1 + tw, y1), color, -1)
-            cv2.putText(img_copy, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        return img_copy

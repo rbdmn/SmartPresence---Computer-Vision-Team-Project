@@ -21,10 +21,7 @@ DATABASE_IMAGES_DIR.mkdir(exist_ok=True)
 TESTING_IMAGES_DIR.mkdir(exist_ok=True)
 MODELS_DIR.mkdir(exist_ok=True)
 
-# MongoDB Configuration
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-MONGO_DB_NAME = "face_attendance"
-MONGO_COLLECTION_NAME = "face_embeddings"
+# Mongodb configuration is in config/configrations.py
 
 # Face Detection Configuration (RetinaFace)
 DETECTION_THRESHOLD = 0.5  # Confidence threshold untuk deteksi wajah
@@ -38,7 +35,7 @@ RECOGNITION_THRESHOLD = 0.5  # Range: -1 sampai 1
 DEFAULT_THRESHOLDS = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]  # Thresholds untuk ROC curve
 
 # Image Configuration
-TARGET_FACE_SIZE = (112, 112)  # Ukuran input untuk ArcFace
+TARGET_FACE_SIZE = (224, 224)  # Ukuran input untuk ArcFace
 
 # Supported image extensions
 SUPPORTED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
