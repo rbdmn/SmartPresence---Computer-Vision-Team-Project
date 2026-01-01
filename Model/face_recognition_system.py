@@ -112,7 +112,7 @@ class FaceRecognitionSystem:
             print(f"Warning: Gagal memuat gambar {image_path}")
         return image
     
-    def register_faces_from_folder(self, folder_path: str = None, clear_existing: bool = True) -> Dict:
+    def register_faces_from_folder(self, folder_path: str = None, clear_existing: bool = True, dataset = DATABASE_IMAGES_DIR) -> Dict:
         """
         Daftarkan semua wajah dari folder ke database
         
@@ -124,7 +124,7 @@ class FaceRecognitionSystem:
             Dictionary dengan statistik registrasi
         """
         if folder_path is None:
-            folder_path = CHOCK_POINT_IMAGES
+            folder_path = dataset
         
         folder = Path(folder_path)
         
