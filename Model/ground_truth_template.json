@@ -1,0 +1,259 @@
+{
+  "registered_tests": [
+    {
+      "image": "Model/ChokePointPickedFrames/1.jpg",
+      "ground_truth_ids": [
+        "1"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/10.jpg",
+      "ground_truth_ids": [
+        "10"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/11.jpg",
+      "ground_truth_ids": [
+        "11"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/12.jpg",
+      "ground_truth_ids": [
+        "12"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/14.jpg",
+      "ground_truth_ids": [
+        "14"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/17.jpg",
+      "ground_truth_ids": [
+        "17"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/19.jpg",
+      "ground_truth_ids": [
+        "19"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/19_2.jpg",
+      "ground_truth_ids": [
+        "19"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/2.jpg",
+      "ground_truth_ids": [
+        "2"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/20.jpg",
+      "ground_truth_ids": [
+        "20"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/24.jpg",
+      "ground_truth_ids": [
+        "24"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/25.jpg",
+      "ground_truth_ids": [
+        "25"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/26.jpg",
+      "ground_truth_ids": [
+        "26"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/27.jpg",
+      "ground_truth_ids": [
+        "27"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/28.jpg",
+      "ground_truth_ids": [
+        "28"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/29.jpg",
+      "ground_truth_ids": [
+        "29"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/3.jpg",
+      "ground_truth_ids": [
+        "3"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/30.jpg",
+      "ground_truth_ids": [
+        "30"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/30_2.jpg",
+      "ground_truth_ids": [
+        "30"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/5.jpg",
+      "ground_truth_ids": [
+        "5"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/6.jpg",
+      "ground_truth_ids": [
+        "6"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/7.jpg",
+      "ground_truth_ids": [
+        "7"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    },
+    {
+      "image": "Model/ChokePointPickedFrames/9.jpg",
+      "ground_truth_ids": [
+        "9"
+      ],
+      "note": "Replace 'TODO' with actual person names/IDs from your database (e.g., ['Bayu', 'Ichsan'])"
+    }
+  ],
+  "unknown_tests": [
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Maurice_Cheeks/Maurice_Cheeks_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Diane_Green/Diane_Green_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Choi_Sung-hong/Choi_Sung-hong_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Ann_Godbehere/Ann_Godbehere_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Elizabeth_Shue/Elizabeth_Shue_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Ricardo_Maduro/Ricardo_Maduro_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Kurt_Budke/Kurt_Budke_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Mario_Lemieux/Mario_Lemieux_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Pascal_Affi_Nguessan/Pascal_Affi_Nguessan_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Pierre_Png/Pierre_Png_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Debbie_Allen/Debbie_Allen_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Claire_Leger/Claire_Leger_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Juan_Jose_Lucas/Juan_Jose_Lucas_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/George_Harrison/George_Harrison_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Janice_Goldfinger/Janice_Goldfinger_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Mike_Gable/Mike_Gable_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Suh_Chung-won/Suh_Chung-won_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Mauricio_Macri/Mauricio_Macri_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Yoon_Won-Sik/Yoon_Won-Sik_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Richard_Gere/Richard_Gere_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Brian_Cowen/Brian_Cowen_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Jeong_Se-hyun/Jeong_Se-hyun_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    },
+    {
+      "image": "Model/lfw/lfw-deepfunneled/Tom_Welch/Tom_Welch_0001.jpg",
+      "note": "No ground truth needed - these should all be rejected as visitors"
+    }
+  ]
+}

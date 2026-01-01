@@ -31,5 +31,10 @@ Model/P2L_S3_C3
 Model/P2L_S3_C3.1
 Model/P2L_S3_C3.2
 Model/P2L_S5_C2.1
-
 ComputerVisionProject
+Model/ChokePointPickedFrames
+Model/lfw
+DB
+Dump
+
+Model/lfw/lfw-deepfunneled
