@@ -26,7 +26,6 @@ class FaceUploadRequest(BaseModel):
 
 class GroundTruthTestRequest(BaseModel):
     ground_truth_file: str
-    thresholds: Optional[List[float]] = None
     threshold: Optional[float] = None
     
     
@@ -49,7 +48,7 @@ async def register_face_from_folder():
     try:
         stats = system.register_faces_from_folder()
         return {
-            "status": "success",
+            "status": "success", 
             "message": "Faces registered from folder successfully",
             "data": {
                 "total_images": stats["total_images"],
@@ -75,7 +74,6 @@ async def test_openset_with_groundtruth(payload: GroundTruthTestRequest):
         
         results = system.test_open_set_with_groundtruth(
             ground_truth_file=payload.ground_truth_file,
-            thresholds=payload.thresholds,
             threshold=payload.threshold
         )
         

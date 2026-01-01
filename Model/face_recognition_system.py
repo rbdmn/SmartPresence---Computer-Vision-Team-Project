@@ -483,7 +483,6 @@ class FaceRecognitionSystem:
     
     def test_open_set_with_groundtruth(self,
                                        ground_truth_file: str,
-                                       thresholds: List[float] = None,
                                        threshold: float = None) -> Dict:
         """
         Test open-set accuracy dengan ground truth manual untuk CCTV frames
@@ -491,23 +490,20 @@ class FaceRecognitionSystem:
         
         Args:
             ground_truth_file: Path ke JSON file berisi ground truth
-            thresholds: List threshold untuk ROC curve (default dari config)
-            threshold: Single threshold untuk quick test (override thresholds)
+            threshold: Threshold untuk recognition (default dari RECOGNITION_THRESHOLD)
             
         Returns:
-            Dict berisi TAR, FAR, FRR, TRR, ROC data, best threshold
+            Dict berisi TAR, FAR, FRR, TRR dan metrics lainnya
         """
         print(f"\n{'='*60}")
         print("OPEN-SET EVALUATION WITH GROUND TRUTH")
         print(f"{'='*60}")
         
-        # Determine thresholds
-        if thresholds is None and threshold is None:
-            thresholds = DEFAULT_THRESHOLDS
-        elif threshold is not None:
-            thresholds = [threshold]
+        # Use default threshold if not specified
+        if threshold is None:
+            threshold = RECOGNITION_THRESHOLD
         
-        print(f"\nMode: {'Single threshold' if len(thresholds) == 1 else 'Multi-threshold'} testing")
+        print(f"\nThreshold: {threshold}")
         
         # Load ground truth
         gt_path = Path(ground_truth_file)
@@ -529,115 +525,72 @@ class FaceRecognitionSystem:
         print(f"  Registered user tests: {len(registered_tests)} images")
         print(f"  Unknown people tests: {len(unknown_tests)} images")
         print(f"  Total ground truth IDs in registered: {sum(len(t.get('ground_truth_ids', [])) for t in registered_tests)}")
-        print(f"\nThresholds to test: {thresholds}")
         
-        # Evaluate for each threshold
-        results_per_threshold = []
-        
+        # Evaluate with single threshold
         print(f"\n{'='*60}")
         print("Memulai Evaluasi...")
         print(f"{'='*60}")
         
-        for thresh in thresholds:
-            print(f"\n[Threshold {thresh:.2f}]")
-            start_time = time.perf_counter()
-            
-            result = self._evaluate_with_groundtruth(
-                registered_tests,
-                unknown_tests,
-                thresh
-            )
-            
-            elapsed = time.perf_counter() - start_time
-            result['evaluation_time_seconds'] = elapsed
-            
-            results_per_threshold.append(result)
-            
-            print(f"  TAR: {result['tar']:.2f}%  |  FRR: {result['frr']:.2f}%")
-            print(f"  FAR: {result['far']:.2f}%  |  TRR: {result['trr']:.2f}%")
-            print(f"  Overall Accuracy: {result['overall_accuracy']:.2f}%")
-            print(f"  Time: {elapsed:.2f}s")
+        start_time = time.perf_counter()
         
-        # Find best threshold (highest balanced accuracy)
-        best_idx = max(range(len(results_per_threshold)),
-                      key=lambda i: results_per_threshold[i]['balanced_accuracy'])
-        best_result = results_per_threshold[best_idx]
+        result = self._evaluate_with_groundtruth(
+            registered_tests,
+            unknown_tests,
+            threshold
+        )
         
-        # Calculate EER approximation (where FAR ≈ FRR)
-        eer_approx = None
-        eer_threshold = None
-        min_diff = float('inf')
-        for result in results_per_threshold:
-            diff = abs(result['far'] - result['frr'])
-            if diff < min_diff:
-                min_diff = diff
-                eer_approx = (result['far'] + result['frr']) / 2
-                eer_threshold = result['threshold']
+        elapsed = time.perf_counter() - start_time
+        result['evaluation_time_seconds'] = elapsed
         
-        # Prepare ROC data
-        roc_data = [{
-            'threshold': r['threshold'],
-            'fpr': r['far'],
-            'tpr': r['tar'],
-            'far': r['far'],
-            'frr': r['frr']
-        } for r in results_per_threshold]
+        # Print results
+        print(f"\n{'='*60}")
+        print("HASIL EVALUASI")
+        print(f"{'='*60}")
+        print(f"  TAR (True Accept): {result['tar']:.2f}%")
+        print(f"  FAR (False Accept): {result['far']:.2f}%  ← CRITICAL")
+        print(f"  FRR (False Reject): {result['frr']:.2f}%")
+        print(f"  TRR (True Reject): {result['trr']:.2f}%")
+        print(f"  Balanced Accuracy: {result['balanced_accuracy']:.2f}%")
+        print(f"  Overall Accuracy: {result['overall_accuracy']:.2f}%")
+        print(f"  Evaluation Time: {elapsed:.2f}s")
+        
+        # Check against security requirements
+        print(f"\n{'='*60}")
+        print("EVALUASI KEAMANAN")
+        print(f"{'='*60}")
+        far_pass = result['far'] < 1.0
+        tar_pass = result['tar'] >= 95.0
+        print(f"FAR < 1%: {'✓ PASS' if far_pass else '✗ FAIL'} ({result['far']:.2f}%)")
+        print(f"TAR >= 95%: {'✓ PASS' if tar_pass else '✗ FAIL'} ({result['tar']:.2f}%)")
         
         # Summary
         summary = {
             'test_type': 'open_set_with_groundtruth',
+            'threshold': threshold,
             'dataset_info': {
                 'registered_test_images': len(registered_tests),
                 'unknown_test_images': len(unknown_tests),
                 'total_registered_faces': sum(len(t.get('ground_truth_ids', [])) for t in registered_tests),
                 'total_tests': len(registered_tests) + len(unknown_tests)
             },
-            'thresholds_tested': len(thresholds),
-            'best_threshold': best_result['threshold'],
-            'best_metrics': {
-                'tar': best_result['tar'],
-                'far': best_result['far'],
-                'frr': best_result['frr'],
-                'trr': best_result['trr'],
-                'balanced_accuracy': best_result['balanced_accuracy'],
-                'overall_accuracy': best_result['overall_accuracy']
+            'metrics': {
+                'tar': result['tar'],
+                'far': result['far'],
+                'frr': result['frr'],
+                'trr': result['trr'],
+                'balanced_accuracy': result['balanced_accuracy'],
+                'overall_accuracy': result['overall_accuracy']
             },
-            'eer_info': {
-                'eer_approximate': eer_approx,
-                'eer_threshold': eer_threshold
+            'confusion_matrix': result['confusion_matrix'],
+            'evaluation_time_seconds': elapsed,
+            'security_check': {
+                'far_pass': far_pass,
+                'tar_pass': tar_pass
             }
         }
         
-        # Print final summary
-        print(f"\n{'='*60}")
-        print("HASIL EVALUASI OPEN-SET (GROUND TRUTH)")
-        print(f"{'='*60}")
-        print(f"\nBest Threshold (Balanced Accuracy): {summary['best_threshold']:.2f}")
-        print(f"  TAR (True Accept): {summary['best_metrics']['tar']:.2f}%")
-        print(f"  FAR (False Accept): {summary['best_metrics']['far']:.2f}%  ← CRITICAL")
-        print(f"  FRR (False Reject): {summary['best_metrics']['frr']:.2f}%")
-        print(f"  TRR (True Reject): {summary['best_metrics']['trr']:.2f}%")
-        print(f"  Balanced Accuracy: {summary['best_metrics']['balanced_accuracy']:.2f}%")
-        print(f"  Overall Accuracy: {summary['best_metrics']['overall_accuracy']:.2f}%")
-        
-        if eer_approx:
-            print(f"\nEER (Equal Error Rate): {eer_approx:.2f}% @ threshold {eer_threshold:.2f}")
-        
-        # Check against security requirements
-        print(f"\n{'='*60}")
-        print("EVALUASI KEAMANAN")
-        print(f"{'='*60}")
-        far_pass = summary['best_metrics']['far'] < 1.0
-        tar_pass = summary['best_metrics']['tar'] >= 95.0
-        print(f"FAR < 1%: {'✓ PASS' if far_pass else '✗ FAIL'} "
-              f"({summary['best_metrics']['far']:.2f}%)")
-        print(f"TAR >= 95%: {'✓ PASS' if tar_pass else '✗ FAIL'} "
-              f"({summary['best_metrics']['tar']:.2f}%)")
-        
         return {
-            'per_threshold_results': results_per_threshold,
-            'roc_data': roc_data,
-            'best_threshold': summary['best_threshold'],
+            'result': result,
             'summary': summary
         }
     
