@@ -6,6 +6,7 @@ from routes.Attendance import router as attendance_router
 from routes.Vector import router as vector_router
 from routes.FaceOperation import router as face_router
 from routes.Account import router as account_router
+from routes.Class import router as class_router
 from config.configrations import db
 
 app = FastAPI()
@@ -28,6 +29,7 @@ app.include_router(attendance_router, prefix="/attendance", tags=["Attendance"])
 app.include_router(vector_router, prefix="/vector", tags=["Vector"])
 app.include_router(face_router, tags=["FaceOperation"])
 app.include_router(account_router, prefix="/account", tags=["Account"])
+app.include_router(class_router, prefix="/class", tags=["Class"])
 
 @app.get("/")
 async def read_root():
