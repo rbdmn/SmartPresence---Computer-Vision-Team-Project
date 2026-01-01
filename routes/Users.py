@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from starlette.responses import JSONResponse
-from models.Users import UserModel
+from models.Users import UserModel, VisitorModel
 from typing import List
-from config.configrations import users_collection
+from config.configrations import users_collection, visitor_collection
 from datetime import datetime
 from bson import ObjectId
 
@@ -33,3 +33,20 @@ async def get_user_by_id(user_id: str):
         user["created_at"] = user["created_at"].isoformat()
     
     return JSONResponse(content=user)
+
+@router.get("/visitor/{visitor_id}", response_model=VisitorModel)
+async def get_visitor_by_id(visitor_id: str):
+    try:
+        print(f"[DEBUG] Fetching visitor with ID: {visitor_id}")
+        visitor = visitor_collection.find_one({"_id": ObjectId(visitor_id)})
+    except:
+        raise HTTPException(status_code=400, detail="Invalid visitor ID format")
+    
+    if not visitor:
+        raise HTTPException(status_code=404, detail="visitor not found")
+    
+    visitor["_id"] = str(visitor["_id"])
+    if "first_seen" in visitor and isinstance(visitor["first_seen"], datetime):
+        visitor["first_seen"] = visitor["first_seen"].isoformat()
+    
+    return JSONResponse(content=visitor)
