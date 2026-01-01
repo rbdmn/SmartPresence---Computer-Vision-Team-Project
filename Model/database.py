@@ -484,19 +484,21 @@ class FaceDatabase:
 
     def add_user_attendance(self, user_id, class_id):
         """
-        Tambah catatan kehadiran untuk user jika belum absen dalam 45 menit terakhir di kelas yang sama
+        Tambah catatan kehadiran untuk user jika belum absen dalam 45 menit terakhir
 
         Args:
-            user_id: ID user
-            class_id: ID kelas
+            user_id: ID user (string atau ObjectId)
+            class_id: ID kelas (string atau ObjectId)
         """
         now = datetime.now()
-        time_limit = now - timedelta(minutes=ATTENDANCE_TIMELAPSE)
 
-        # Query kehadiran terakhir user di kelas yang sama
+        # Convert ke ObjectId jika masih string
+        user_obj_id = ObjectId(user_id) if isinstance(user_id, str) else user_id
+        class_obj_id = ObjectId(class_id) if isinstance(class_id, str) else class_id
+
+        # Query kehadiran terakhir user (TANPA filter class_id)
         query = {
-            "user_id": ObjectId(user_id),
-            "class_id": ObjectId(class_id)
+            "user_id": user_obj_id
         }
         last_attendance = None
         if attendance_collection is not None:
@@ -506,43 +508,51 @@ class FaceDatabase:
             )
         else:
             # Fallback ke memory storage
-            filtered = [d for d in self._memory_storage if d.get("user_id") == ObjectId(user_id) and d.get("class_id") == ObjectId(class_id)]
+            filtered = [d for d in self._memory_storage if d.get("user_id") == user_obj_id]
             if filtered:
                 last_attendance = max(filtered, key=lambda d: d["timestamp"])
 
         # Cek apakah sudah lewat 45 menit
         if last_attendance:
-            last_time = datetime.fromisoformat(last_attendance["timestamp"])
-            if last_time > time_limit:
+            last_time = datetime.fromisoformat(last_attendance["timestamp"]) if isinstance(last_attendance["timestamp"], str) else last_attendance["timestamp"]
+            
+            time_diff = (now - last_time).total_seconds() / 60  # dalam menit
+            print(f"[DEBUG] User {user_id} last attendance: {last_time}, diff: {time_diff:.1f} menit")
+            
+            if time_diff < ATTENDANCE_TIMELAPSE:
+                print(f"[DEBUG] ❌ Attendance ditolak: belum lewat {ATTENDANCE_TIMELAPSE} menit (baru {time_diff:.1f} menit)")
                 return False  # Tidak boleh absen lagi
 
         attendance_doc = {
-            "user_id": ObjectId(user_id),
+            "user_id": user_obj_id,
             "timestamp": now.isoformat(),
-            "class_id": ObjectId(class_id)
+            "class_id": class_obj_id
         }
 
         if attendance_collection is not None:
             attendance_collection.insert_one(attendance_doc)
+            print(f"[DEBUG] ✅ Attendance berhasil ditambahkan untuk user {user_id}")
         else:
             self._memory_storage.append(attendance_doc)
         return True
             
     def add_visitor_attendance(self, visitor_id, class_id):
         """
-        Tambah catatan kehadiran untuk visitor
+        Tambah catatan kehadiran untuk visitor jika belum absen dalam 45 menit terakhir
         
         Args:
-            visitor_id: ID visitor
-            class_id: ID kelas
+            visitor_id: ID visitor (string atau ObjectId)
+            class_id: ID kelas (string atau ObjectId)
         """
         now = datetime.now()
-        time_limit = now - timedelta(minutes=ATTENDANCE_TIMELAPSE) 
 
-        # Query kehadiran terakhir user di kelas yang sama
+        # Convert ke ObjectId jika masih string
+        visitor_obj_id = ObjectId(visitor_id) if isinstance(visitor_id, str) else visitor_id
+        class_obj_id = ObjectId(class_id) if isinstance(class_id, str) else class_id
+
+        # Query kehadiran terakhir visitor (TANPA filter class_id)
         query = {
-            "visitor_id": ObjectId(visitor_id),
-            "class_id": ObjectId(class_id)
+            "visitor_id": visitor_obj_id
         }
         last_attendance = None
         if attendance_collection is not None:
@@ -552,24 +562,30 @@ class FaceDatabase:
             )
         else:
             # Fallback ke memory storage
-            filtered = [d for d in self._memory_storage if d.get("visitor_id") == ObjectId(visitor_id) and d.get("class_id") == ObjectId(class_id)]
+            filtered = [d for d in self._memory_storage if d.get("visitor_id") == visitor_obj_id]
             if filtered:
                 last_attendance = max(filtered, key=lambda d: d["timestamp"])
 
         # Cek apakah sudah lewat 45 menit
         if last_attendance:
-            last_time = datetime.fromisoformat(last_attendance["timestamp"])
-            if last_time > time_limit:
+            last_time = datetime.fromisoformat(last_attendance["timestamp"]) if isinstance(last_attendance["timestamp"], str) else last_attendance["timestamp"]
+            
+            time_diff = (now - last_time).total_seconds() / 60  # dalam menit
+            print(f"[DEBUG] Visitor {visitor_id} last attendance: {last_time}, diff: {time_diff:.1f} menit")
+            
+            if time_diff < ATTENDANCE_TIMELAPSE:
+                print(f"[DEBUG] ❌ Attendance ditolak: belum lewat {ATTENDANCE_TIMELAPSE} menit (baru {time_diff:.1f} menit)")
                 return False  # Tidak boleh absen lagi
 
         attendance_doc = {
-            "visitor_id": ObjectId(visitor_id),
+            "visitor_id": visitor_obj_id,
             "timestamp": now.isoformat(),
-            "class_id": ObjectId(class_id)
+            "class_id": class_obj_id
         }
 
         if attendance_collection is not None:
             attendance_collection.insert_one(attendance_doc)
+            print(f"[DEBUG] ✅ Attendance berhasil ditambahkan untuk visitor {visitor_id}")
         else:
             self._memory_storage.append(attendance_doc)
         return True

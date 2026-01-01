@@ -13,7 +13,7 @@ class FaceDetector:
     Face Detector menggunakan RetinaFace
     """
     
-    def __init__(self, use_gpu: bool = True):
+    def __init__(self, use_gpu: bool = False):
         """
         Inisialisasi RetinaFace detector
         """
@@ -40,7 +40,6 @@ class FaceDetector:
         
         # PENTING: Set context
         ctx_id = 0 if use_gpu else -1  # 0 = GPU, -1 = CPU
-        ctx_id = -1  # Paksa pakai CPU untuk kompatibilitas
         # self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
         # Prepare dengan detection size
         self.app.prepare(ctx_id=ctx_id, det_size=(224, 224), det_thresh=DETECTION_THRESHOLD)
