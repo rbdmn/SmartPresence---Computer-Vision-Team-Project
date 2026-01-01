@@ -79,9 +79,15 @@ async def attendance_report_by_schedule(
         raise HTTPException(status_code=400, detail=f"Invalid date/time: {e}")
     print(f"[DEBUG] BY SCHEDULE: course_name={course_name}, meeting_date={meeting_date}, start_time={start_time}, end_time={end_time}, class_id={class_id}")
     pipeline = [
+        {"$addFields": {
+            "timestamp_date": {"$toDate": "$timestamp"}
+        }},
         {"$match": {
-            "timestamp": {"$gte": start_time, "$lte": end_time},
-            "class_id": class_obj_id
+            "timestamp_date": {"$gte": start_time, "$lte": end_time},
+            "$or": [
+                {"class_id": str(class_obj_id)},
+                {"class_id": class_obj_id}
+            ]
         }},
         {"$lookup": {
             "from": "Users",
@@ -115,7 +121,9 @@ async def attendance_report_by_schedule(
     ]
     results = list(attendance_collection.aggregate(pipeline))
     print(f"[DEBUG] Matched attendance records: {len(results)}")
-    print(f"[DEBUG] Attendees: {[r['full_name'] for r in results]}")
+    if results:
+        print(f"[DEBUG] First result: {results[0]}")
+    print(f"[DEBUG] Attendees: {[r.get('full_name', 'Unknown') for r in results]}")
     for r in results:
         # Convert ObjectId fields to string
         for k, v in r.items():
@@ -123,6 +131,11 @@ async def attendance_report_by_schedule(
                 r[k] = str(v)
         if isinstance(r.get("timestamp"), datetime):
             r["timestamp"] = r["timestamp"].isoformat()
+        # Ensure full_name and category exist
+        if 'full_name' not in r:
+            r['full_name'] = 'Unknown'
+        if 'category' not in r:
+            r['category'] = 'Unknown'
     return {
         "scenario": "by-schedule",
         "start_time": start_time.isoformat(),
@@ -146,7 +159,7 @@ async def attendance_report_by_manual(
         end_time = datetime.strptime(f"{specific_date} {end_time_str}", "%Y-%m-%d %H:%M")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid date/time: {e}")
-    # Validate class_id is a valid ObjectId and exists in Class collection
+    # Validate class_id is a valid ObjectId format and exists in Class collection
     try:
         class_obj_id = ObjectId(class_id)
     except Exception:
@@ -154,10 +167,19 @@ async def attendance_report_by_manual(
     if not class_collection.find_one({"_id": class_obj_id}):
         raise HTTPException(status_code=404, detail="Class not found")
     print(f"[DEBUG] BY MANUAL: class_id={class_id}, specific_date={specific_date}, start_time={start_time}, end_time={end_time}")
+    
+    # Check if class_id in attendance is stored as string or ObjectId
+    # Try to match both string and ObjectId format
     pipeline = [
+        {"$addFields": {
+            "timestamp_date": {"$toDate": "$timestamp"}
+        }},
         {"$match": {
-            "timestamp": {"$gte": start_time, "$lte": end_time},
-            "class_id": class_obj_id
+            "timestamp_date": {"$gte": start_time, "$lte": end_time},
+            "$or": [
+                {"class_id": class_id},  # Match as string
+                {"class_id": class_obj_id}  # Match as ObjectId
+            ]
         }},
         {"$lookup": {
             "from": "Users",
@@ -191,7 +213,9 @@ async def attendance_report_by_manual(
     ]
     results = list(attendance_collection.aggregate(pipeline))
     print(f"[DEBUG] Matched attendance records: {len(results)}")
-    print(f"[DEBUG] Attendees: {[r['full_name'] for r in results]}")
+    if results:
+        print(f"[DEBUG] First result: {results[0]}")
+    print(f"[DEBUG] Attendees: {[r.get('full_name', 'Unknown') for r in results]}")
     for r in results:
         # Convert ObjectId fields to string
         for k, v in r.items():
@@ -199,6 +223,11 @@ async def attendance_report_by_manual(
                 r[k] = str(v)
         if isinstance(r.get("timestamp"), datetime):
             r["timestamp"] = r["timestamp"].isoformat()
+        # Ensure full_name and category exist
+        if 'full_name' not in r:
+            r['full_name'] = 'Unknown'
+        if 'category' not in r:
+            r['category'] = 'Unknown'
     return {
         "scenario": "by-manual",
         "start_time": start_time.isoformat(),
