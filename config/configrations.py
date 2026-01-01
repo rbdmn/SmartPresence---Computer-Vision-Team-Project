@@ -1,10 +1,16 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-uri = "mongodb+srv://raufbdmn_db_user:ShKGiD8Lcj9mzB1o@smartpresencecluster.or44jha.mongodb.net/?appName=SmartPresenceCluster"
+# uri = "mongodb+srv://raufbdmn_db_user:ShKGiD8Lcj9mzB1o@smartpresencecluster.or44jha.mongodb.net/?appName=SmartPresenceCluster"
+
+# # Create a new client and connect to the server
+# client = MongoClient(uri, server_api=ServerApi('1'))
+
+# MongoDB Local URI
+uri = "mongodb://localhost:27017"
 
 # Create a new client and connect to the server
-client = MongoClient(uri, server_api=ServerApi('1'))
+client = MongoClient(uri)
 
 # Send a ping to confirm a successful connection
 try:

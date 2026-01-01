@@ -97,7 +97,6 @@ async def attendance_report_by_schedule(
         }},
         {"$project": {
             "timestamp": 1,
-            "status": 1,
             "full_name": {
                 "$cond": [
                     {"$gt": [{"$size": "$student_info"}, 0]},
@@ -140,7 +139,7 @@ async def attendance_report_by_manual(
     specific_date: str = Query(..., description="Tanggal (YYYY-MM-DD)"),
     start_time_str: str = Query(..., description="Jam mulai (HH:mm)"),
     end_time_str: str = Query(..., description="Jam selesai (HH:mm)"),
-    current_user: dict = Depends(get_current_user)
+    # current_user: dict = Depends(get_current_user)
 ):
     try:
         start_time = datetime.strptime(f"{specific_date} {start_time_str}", "%Y-%m-%d %H:%M")
@@ -174,7 +173,6 @@ async def attendance_report_by_manual(
         }},
         {"$project": {
             "timestamp": 1,
-            "status": 1,
             "full_name": {
                 "$cond": [
                     {"$gt": [{"$size": "$student_info"}, 0]},

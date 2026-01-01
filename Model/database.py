@@ -182,7 +182,7 @@ class FaceDatabase:
             self._memory_storage = []
             return count
     
-    def find_closest_match(self, query_embedding: np.ndarray, threshold: float = 0.5) -> Tuple[Optional[str], float]:
+    def find_closest_matches(self, query_embedding: np.ndarray, threshold: float = 0.5) -> Tuple[Optional[str], float]:
         """
         Cari embedding terdekat menggunakan Euclidean distance
         
@@ -218,7 +218,66 @@ class FaceDatabase:
         else:
             return None, max_similarity
         
-    def find_visitor_closest_match(self, query_embedding: np.ndarray, threshold: float = 0.5) -> Tuple[Optional[str], float]:
+    def find_closest_match(
+    self, 
+    query_embedding: np.ndarray, 
+    all_embeddings,
+    threshold: float = 0.5,
+    user_cutoff: float = 0.2,  # Skip user jika < ini
+    early_stop: float = 0.8     # Stop jika dapat >= ini
+) -> Tuple[Optional[str], float]:
+        """
+        Optimized matching dengan user-level cutoff dan early stopping
+        """
+        
+        # if not all_embeddings:
+        #     return None, 0.0
+        print(f"Debug: Mencari di database, total embeddings: {len(all_embeddings)}")
+        # Group embeddings by user_id
+        user_embeddings = {}
+        for doc in all_embeddings: 
+            user_id = doc["user_id"]
+            if user_id not in user_embeddings:
+                user_embeddings[user_id] = []
+            user_embeddings[user_id].append(doc["embedding"])
+        print(f"Debug: Total unique users in database: {len(user_embeddings)}")
+        
+        max_similarity = -1.0
+        best_match = None
+        
+        for user_id, embeddings in user_embeddings.items():
+            # STRATEGI 1: Cek embedding pertama sebagai filter
+            first_similarity = FaceEncoder.compute_cosine_similarity(
+                query_embedding, 
+                embeddings[0]
+            )
+            
+            # User-level cutoff: Skip user ini jika embedding pertama jelek
+            if first_similarity < user_cutoff:
+                continue
+            
+            # Jika embedding pertama bagus, cek semua embedding user ini
+            for embedding in embeddings:
+                similarity = FaceEncoder.compute_cosine_similarity(
+                    query_embedding, 
+                    embedding
+                )
+                
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    best_match = user_id
+                
+                # STRATEGI 2: Early stopping jika dapat match sangat kuat
+                if similarity >= early_stop:
+                    return best_match, max_similarity
+        
+        if max_similarity >= threshold:
+            return best_match, max_similarity
+        else:
+            return None, max_similarity
+        
+        
+    def find_visitor_closest_match(self, query_embedding: np.ndarray, all_embeddings, threshold: float = 0.5) -> Tuple[Optional[str], float]:
         """
         Cari embedding terdekat menggunakan Euclidean distance
         
@@ -229,7 +288,6 @@ class FaceDatabase:
         Returns:
             Tuple (person_name, distance) atau (None, float('inf')) jika tidak ada match
         """
-        all_embeddings = self.get_all_visitor_embeddings()
         print(f"Debug: Mencari di database visitor, total embeddings: {len(all_embeddings)}")
         if not all_embeddings:
             return None, 0.0
@@ -253,7 +311,7 @@ class FaceDatabase:
         else:
             return None, max_similarity
     
-    def maybe_add_embedding(self, user_id, embedding):
+    def maybe_add_embedding(self, user_id, embedding, all_embeddings):
         """
         Tambah embedding baru jika user belum memiliki embedding,
         atau jika embedding yang ada sudah berbeda signifikan
@@ -270,9 +328,9 @@ class FaceDatabase:
             count = len(existing_embeddings)
             user_id = ObjectId(user_id)
             
-            if count <= 10:
+            if count <= 3 :
                 # Cek similarity dengan embedding yang sudah ada
-                similarity = self.find_closest_match(embedding)[1]
+                similarity = self.find_closest_match(embedding, all_embeddings)[1]
                 
                 # Jika similarity > 0.85, embedding terlalu mirip, jangan tambah
                 if similarity > 0.85:
@@ -281,7 +339,7 @@ class FaceDatabase:
                 document = {
                     "user_id": user_id,
                     "embedding": embedding.tolist() if isinstance(embedding, np.ndarray) else embedding,
-                    "created_at": datetime.now()
+                    "created_at": datetime.now().isoformat()
                 }
                 vector_collection.insert_one(document)
                 return True
@@ -303,7 +361,7 @@ class FaceDatabase:
             else:
                 return False
 
-    def maybe_add_visitor_embedding(self, visitor_id, embedding):
+    def maybe_add_visitor_embedding(self, visitor_id, embedding, all_embeddings):
         """
         Tambah embedding baru jika visitor belum memiliki embedding,
         atau jika embedding yang ada sudah berbeda signifikan
@@ -319,10 +377,10 @@ class FaceDatabase:
             existing_embeddings = list(visitor_vector_collection.find({"visitor_id": visitor_id}))
             count = len(existing_embeddings)
             
-            if count <= 10:
+            if count <= 3:
                 print(f"Debug: Existing visitor embeddings count for {visitor_id}: {count}")
                 # Cek similarity dengan embedding yang sudah ada
-                similarity = self.find_visitor_closest_match(embedding)[1]
+                similarity = self.find_visitor_closest_match(embedding, all_embeddings)[1]
                 print(f"Debug: Similarity dengan embedding existing: {similarity}")
                 
                 # Jika similarity > 0.85, embedding terlalu mirip, jangan tambah

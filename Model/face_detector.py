@@ -13,7 +13,7 @@ class FaceDetector:
     Face Detector menggunakan RetinaFace
     """
     
-    def __init__(self):
+    def __init__(self, use_gpu: bool = True):
         """
         Inisialisasi RetinaFace detector
         """
@@ -26,8 +26,28 @@ class FaceDetector:
             providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
         )
         
+        # if use_gpu:
+        #     providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+        # else:
+        #     providers = ['CPUExecutionProvider']
+        
+        # # Initialize FaceAnalysis dengan GPU
+        # self.app = FaceAnalysis(
+        #     name='buffalo_l',  # atau model lain
+        #     providers=providers,
+        #     allowed_modules=['detection', 'recognition']
+        # )
+        
+        # PENTING: Set context
+        ctx_id = 0 if use_gpu else -1  # 0 = GPU, -1 = CPU
+        ctx_id = -1  # Paksa pakai CPU untuk kompatibilitas
+        # self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
         # Prepare dengan detection size
-        self.app.prepare(ctx_id=0, det_size=(640, 640), det_thresh=DETECTION_THRESHOLD)
+        self.app.prepare(ctx_id=ctx_id, det_size=(224, 224), det_thresh=DETECTION_THRESHOLD)
+        
+        print(f"Model running on: {'GPU' if use_gpu else 'CPU'}")
+        print(f"Providers: {self.app.models['recognition'].session.get_providers()}")
+        
         
         print("Model RetinaFace berhasil dimuat!")
     
@@ -43,6 +63,9 @@ class FaceDetector:
         """
         if image is None:
             return []
+        
+        # if len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] == 1):
+        #     image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         
         # Deteksi wajah
         faces = self.app.get(image)
@@ -86,7 +109,9 @@ class FaceDetector:
         bboxes = []
         
         # Deteksi wajah menggunakan InsightFace
+        print("Mendeteksi wajah dalam gambar...")
         detections = self.detect_faces(image)
+        print(f"Ditemukan {len(detections)} wajah.")
         
         for face in detections:
             # InsightFace bbox format: [x1, y1, x2, y2]
